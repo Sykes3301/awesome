@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------
---- Rules for clients.
+--- Apply properties to a new client based on pre-determined rules.
 --
 -- This module applies @{rules} to clients during startup (via @{client.manage},
 -- but its functions can be used for client matching in general.
@@ -152,22 +152,22 @@ end
 
 --- Get list of matching rules for a client.
 -- @tparam client c The client.
--- @tparam table _rules The rules to check. List with "rule", "rule_any", "except" and
+-- @tparam table rules The rules to check. List with "rule", "rule_any", "except" and
 --   "except_any" keys.
 -- @treturn table The list of matched rules.
 -- @staticfct ruled.client.matching_rules
-function module.matching_rules(c, _rules)
-    return crules:matching_rules(c, _rules)
+function module.matching_rules(c, rules)
+    return crules:matching_rules(c, rules)
 end
 
 --- Check if a client matches a given set of rules.
 -- @tparam client c The client.
--- @tparam table _rules The rules to check. List of tables with `rule`, `rule_any`,
+-- @tparam table rules The rules to check. List of tables with `rule`, `rule_any`,
 --   `except` and `except_any` keys.
 -- @treturn bool True if at least one rule is matched, false otherwise.
 -- @staticfct ruled.client.matches_list
-function module.matches_list(c, _rules)
-    return crules:matches_rules(c, _rules)
+function module.matches_list(c, rules)
+    return crules:matchesrules(c, rules)
 end
 
 --- Remove a source.
@@ -180,9 +180,10 @@ end
 
 --- Apply ruled.client.rules to a client.
 -- @tparam client c The client.
+-- @noreturn
 -- @staticfct ruled.client.apply
 function module.apply(c)
-    return crules:apply(c)
+    crules:apply(c)
 end
 
 --- Add a new rule to the default set.
@@ -527,7 +528,8 @@ end
 --- Apply properties and callbacks to a client.
 -- @tparam client c The client.
 -- @tparam table props Properties to apply.
--- @tparam[opt] table callbacks Callbacks to apply.
+-- @tparam[opt={}] table callbacks Callbacks to apply.
+-- @noreturn
 -- @staticfct ruled.client.execute
 -- @request client titlebars rules granted The `titlebars_enabled` is set in the
 --  rules.

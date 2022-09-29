@@ -61,7 +61,7 @@ local function mouse_resize_handler(c, _, _, _, orientation)
         if g.height+15 > wa.height then
             offset = g.height * .5
             cursor = "sb_h_double_arrow"
-        elseif not (g.y+g.height+15 > wa.y+wa.height) then
+        elseif g.y+g.height+15 <= wa.y+wa.height then
             offset = g.height
         end
         corner_coords = { x = wa.x + wa.width * mwfact, y = g.y + offset }
@@ -70,7 +70,7 @@ local function mouse_resize_handler(c, _, _, _, orientation)
         if g.height+15 >= wa.height then
             offset = g.height * .5
             cursor = "sb_h_double_arrow"
-        elseif not (g.y+g.height+15 > wa.y+wa.height) then
+        elseif g.y+g.height+15 <= wa.y+wa.height then
             offset = g.height
         end
         corner_coords = { x = wa.x + wa.width * (1 - mwfact), y = g.y + offset }
@@ -79,7 +79,7 @@ local function mouse_resize_handler(c, _, _, _, orientation)
         if g.width+15 >= wa.width then
             offset = g.width * .5
             cursor = "sb_v_double_arrow"
-        elseif not (g.x+g.width+15 > wa.x+wa.width) then
+        elseif g.x+g.width+15 <= wa.x+wa.width then
             offset = g.width
         end
         corner_coords = { y = wa.y + wa.height * mwfact, x = g.x + offset}
@@ -88,7 +88,7 @@ local function mouse_resize_handler(c, _, _, _, orientation)
         if g.width+15 >= wa.width then
             offset = g.width * .5
             cursor = "sb_v_double_arrow"
-        elseif not (g.x+g.width+15 > wa.x+wa.width) then
+        elseif g.x+g.width+15 <= wa.x+wa.width then
             offset = g.width
         end
         corner_coords = { y = wa.y + wa.height * (1 - mwfact), x= g.x + offset }
@@ -104,16 +104,16 @@ local function mouse_resize_handler(c, _, _, _, orientation)
     end
 
     local prev_coords = {}
-    capi.mousegrabber.run(function (_mouse)
+    capi.mousegrabber.run(function (coords)
                               if not c.valid then return false end
 
-                              _mouse.x = _mouse.x + coordinates_delta.x
-                              _mouse.y = _mouse.y + coordinates_delta.y
-                              for _, v in ipairs(_mouse.buttons) do
+                              coords.x = coords.x + coordinates_delta.x
+                              coords.y = coords.y + coordinates_delta.y
+                              for _, v in ipairs(coords.buttons) do
                                   if v then
-                                      prev_coords = { x =_mouse.x, y = _mouse.y }
-                                      local fact_x = (_mouse.x - wa.x) / wa.width
-                                      local fact_y = (_mouse.y - wa.y) / wa.height
+                                      prev_coords = { x =coords.x, y = coords.y }
+                                      local fact_x = (coords.x - wa.x) / wa.width
+                                      local fact_y = (coords.y - wa.y) / wa.height
                                       local new_mwfact
 
                                       local geom = c:geometry()
@@ -123,15 +123,15 @@ local function mouse_resize_handler(c, _, _, _, orientation)
                                       local wfact
                                       local wfact_x, wfact_y
                                       if (geom.y+geom.height+15) > (wa.y+wa.height) then
-                                          wfact_y = (geom.y + geom.height - _mouse.y) / wa.height
+                                          wfact_y = (geom.y + geom.height - coords.y) / wa.height
                                       else
-                                          wfact_y = (_mouse.y - geom.y) / wa.height
+                                          wfact_y = (coords.y - geom.y) / wa.height
                                       end
 
                                       if (geom.x+geom.width+15) > (wa.x+wa.width) then
-                                          wfact_x = (geom.x + geom.width - _mouse.x) / wa.width
+                                          wfact_x = (geom.x + geom.width - coords.x) / wa.width
                                       else
-                                          wfact_x = (_mouse.x - geom.x) / wa.width
+                                          wfact_x = (coords.x - geom.x) / wa.width
                                       end
 
 
@@ -155,7 +155,7 @@ local function mouse_resize_handler(c, _, _, _, orientation)
                                       return true
                                   end
                               end
-                              return prev_coords.x == _mouse.x and prev_coords.y == _mouse.y
+                              return prev_coords.x == coords.x and prev_coords.y == coords.y
                           end, cursor)
 end
 
@@ -312,6 +312,7 @@ end
 --- The main tile algo, on the right.
 -- @param screen The screen number to tile.
 -- @clientlayout awful.layout.suit.tile.right
+-- @usebeautiful beautiful.layout_tile
 tile.right = {}
 tile.right.name = "tile"
 tile.right.arrange = do_tile
@@ -323,6 +324,7 @@ end
 --- The main tile algo, on the left.
 -- @param screen The screen number to tile.
 -- @clientlayout awful.layout.suit.tile.left
+-- @usebeautiful beautiful.layout_tileleft
 tile.left = {}
 tile.left.name = "tileleft"
 tile.left.skip_gap = tile.skip_gap
@@ -336,6 +338,7 @@ end
 --- The main tile algo, on the bottom.
 -- @param screen The screen number to tile.
 -- @clientlayout awful.layout.suit.tile.bottom
+-- @usebeautiful beautiful.layout_tilebottom
 tile.bottom = {}
 tile.bottom.name = "tilebottom"
 tile.bottom.skip_gap = tile.skip_gap
@@ -349,6 +352,7 @@ end
 --- The main tile algo, on the top.
 -- @param screen The screen number to tile.
 -- @clientlayout awful.layout.suit.tile.top
+-- @usebeautiful beautiful.layout_tiletop
 tile.top = {}
 tile.top.name = "tiletop"
 tile.top.skip_gap = tile.skip_gap

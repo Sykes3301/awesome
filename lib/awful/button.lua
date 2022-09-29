@@ -70,41 +70,51 @@ button.names = {
 -- Please note that Awesome ignores the status of "Lock" and "Mod2" (Num Lock).
 --
 -- @property modifiers
+-- @tparam[opt={}] table modifiers
+-- @tablerowtype A list of modifier names in no specific order.
 
 --- The mouse button identifier.
 --
 -- ![Mouse buttons](../images/mouse.svg)
 --
 -- @property button
--- @param integer
+-- @tparam integer button
+-- @propertydefault Set in the constructor.
+-- @propertyunit X11 mouse button codes.
+-- @negativeallowed false
 
 --- The button description.
 --
 -- @property description
--- @param string
+-- @tparam[opt=""] string description
 
 --- The button name.
 --
 -- @property name
--- @param string
+-- @tparam[opt=""] string name
 
 --- The button group.
 --
 -- @property group
--- @param string
+-- @tparam[opt=""] string group
 
 --- The callback when this button is pressed.
 --
 -- @property on_press
--- @param function
+-- @tparam[opt=nil] function|nil on_press
+-- @functionnoparam
+-- @functionnoreturn
 
 --- The callback when this button is released.
 --
 -- @property on_release
--- @param function
+-- @tparam[opt=nil] function|nil on_release
+-- @functionnoparam
+-- @functionnoreturn
 
 --- Execute this mousebinding.
--- @method :trigger
+-- @method trigger
+-- @noreturn
 
 function button:set_button(b)
     for _, v in ipairs(self) do
@@ -237,7 +247,7 @@ local obj_mt = {
 --
 -- @constructorfct awful.button
 -- @tparam table mod A list of modifier keys.  Valid modifiers are:
---  `Any`, `Mod1`, Mod2`, `Mod3`, `Mod4`, `Mod5`, `Shift`, `Lock` and `Control`.
+--  `Any`, `Mod1`, `Mod2`, `Mod3`, `Mod4`, `Mod5`, `Shift`, `Lock` and `Control`.
 --  This argument is (**mandatory**).
 -- @tparam number button The mouse button (it is recommended to use the
 --  `awful.button.names` constants.
@@ -250,7 +260,7 @@ local obj_mt = {
 -- @constructorfct2 awful.button
 -- @tparam table args
 -- @tparam table args.modifiers A list of modifier keys.  Valid modifiers are:
---  `Any`, `Mod1`, Mod2`, `Mod3`, `Mod4`, `Mod5`, `Shift`, `Lock` and `Control`.
+--  `Any`, `Mod1`, `Mod2`, `Mod3`, `Mod4`, `Mod5`, `Shift`, `Lock` and `Control`.
 --  This argument is (**mandatory**).
 -- @tparam number args.button The mouse button (it is recommended to use the
 --  `awful.button.names` constants.
@@ -258,14 +268,14 @@ local obj_mt = {
 -- @tparam function args.on_release Callback for when the button is released.
 -- @treturn table An `awful.button` object.
 
-local function new_common(mod, _button, press, release)
+local function new_common(mod, btn, press, release)
     local ret = {}
     local subsets = gmath.subsets(ignore_modifiers)
 
     for _, set in ipairs(subsets) do
         local sub_button = capi.button {
             modifiers = gtable.join(mod, set),
-            button    = _button
+            button    = btn
         }
 
         sub_button._private._legacy_convert_to = ret
@@ -294,9 +304,9 @@ local function new_common(mod, _button, press, release)
     return setmetatable(ret, obj_mt)
 end
 
-function button.new(args, _button, press, release)
+function button.new(args, btn, press, release)
     -- Assume this is the new constructor.
-    if not _button then
+    if not btn then
         assert(not (press or release), "Calling awful.button() requires a button name")
         return new_common(
             args.modifiers,
@@ -305,7 +315,7 @@ function button.new(args, _button, press, release)
             args.on_release
         )
     else
-        return new_common(args, _button, press, release)
+        return new_common(args, btn, press, release)
     end
 end
 

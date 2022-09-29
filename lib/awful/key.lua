@@ -43,7 +43,8 @@ local gobject = require("gears.object")
 -- keycode such as `#65`.
 --
 -- @property key
--- @param string
+-- @tparam string key
+-- @propertydefault Set in the constructor.
 
 --- The table of modifier keys.
 --
@@ -68,38 +69,43 @@ local gobject = require("gears.object")
 -- Please note that Awesome ignores the status of "Lock" and "Mod2" (Num Lock).
 --
 -- @property modifiers
--- @tparam table modifiers
+-- @tparam[opt={}] table modifiers
+-- @tablerowtype A list of modifier names in no specific order.
 
 --- The description of the function run from a key binding.
 --
 -- This is used, for example, by `awful.hotkeys_popup`.
 --
 -- @property description
--- @param string
+-- @tparam[opt=""] string description
 
 --- The key name.
 --
 -- This can be useful when searching for keybindings by keywords.
 --
 -- @property name
--- @param string
+-- @tparam[opt=""] string name
 
 --- The key group bound to a function in a key binding.
 --
 -- This is used, for example, by `awful.hotkeys_popup`.
 --
 -- @property group
--- @param string
+-- @tparam[opt=""] string group
 
 --- The callback when this key is pressed.
 --
 -- @property on_press
--- @param function
+-- @tparam[opt=nil] function|nil on_press
+-- @functionnoparam
+-- @functionnoreturn
 
 --- The callback when this key is released.
 --
 -- @property on_release
--- @param function
+-- @tparam[opt=nil] function|nil on_release
+-- @functionnoparam
+-- @functionnoreturn
 
 local key = { mt = {}, hotkeys = {} }
 
@@ -159,7 +165,8 @@ end
 
 --- Execute this keybinding.
 --
--- @method :trigger
+-- @method trigger
+-- @noreturn
 
 function key:trigger()
     local data = reverse_map[self]
@@ -271,7 +278,7 @@ end
 -- @treturn table A table with one or several key objects.
 -- @constructorfct awful.key
 
-local function new_common(mod, _keys, press, release, data)
+local function new_common(mod, keys, press, release, data)
     if type(release)=='table' then
         data=release
         release=nil
@@ -279,7 +286,7 @@ local function new_common(mod, _keys, press, release, data)
 
     local ret = {}
     local subsets = gmath.subsets(key.ignore_modifiers)
-    for _, key_pair in ipairs(_keys) do
+    for _, key_pair in ipairs(keys) do
         for _, set in ipairs(subsets) do
             local sub_key = capi.key {
                 modifiers = gtable.join(mod, set),
@@ -315,15 +322,15 @@ local function new_common(mod, _keys, press, release, data)
     -- append custom userdata (like description) to a hotkey
     data = data and gtable.clone(data) or {}
     data.mod = mod
-    data.keys = _keys
+    data.keys = keys
     data.on_press = press
     data.on_release = release
     data._is_capi_key = false
     assert((not data.key) or type(data.key) == "string")
     table.insert(key.hotkeys, data)
     data.execute = function(_)
-        assert(#_keys == 1, "key:execute() makes no sense for groups")
-        key.execute(mod, _keys[1])
+        assert(#keys == 1, "key:execute() makes no sense for groups")
+        key.execute(mod, keys[1])
     end
 
     -- Store the private data
@@ -412,9 +419,9 @@ local function get_keys(args)
     return key.keygroups[args.keygroup]
 end
 
-function key.new(args, _key, press, release, data)
+function key.new(args, keycode, press, release, data)
     -- Assume this is the new constructor.
-    if not _key then
+    if not keycode then
         assert(not (press or release or data), "Calling awful.key() requires a key name")
 
         local keys = get_keys(args)
@@ -427,20 +434,20 @@ function key.new(args, _key, press, release, data)
             args
         )
     else
-        return new_common(args, {{_key}}, press, release, data)
+        return new_common(args, {{keycode}}, press, release, data)
     end
 end
 
 --- Compare a key object with modifiers and key.
--- @param _key The key object.
--- @param pressed_mod The modifiers to compare with.
--- @param pressed_key The key to compare with.
--- @staticfct awful.key.match
-function key.match(_key, pressed_mod, pressed_key)
+-- @tparam table pressed_mod The modifiers to compare with.
+-- @tparam string pressed_key The key to compare with.
+-- @treturn boolean If the key and modifier match.
+-- @method match
+function key.match(self, pressed_mod, pressed_key)
     -- First, compare key.
-    if pressed_key ~= _key.key then return false end
+    if pressed_key ~= self.key then return false end
     -- Then, compare mod
-    local mod = _key.modifiers
+    local mod = self.modifiers
     -- For each modifier of the key object, check that the modifier has been
     -- pressed.
     for _, m in ipairs(mod) do

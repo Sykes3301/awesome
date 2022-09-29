@@ -1,4 +1,6 @@
 ---------------------------------------------------------------------------
+-- Box where widget can be displayed.
+--
 -- @author Uli Schlachter
 -- @copyright 2010 Uli Schlachter
 -- @popupmod wibox
@@ -101,6 +103,7 @@ end
 -- @tparam string path The path.
 -- @tparam[opt=nil] table context A widget context.
 -- @method save_to_svg
+-- @noreturn
 function wibox:save_to_svg(path, context)
     wibox.widget.draw_to_svg_file(
         self:to_widget(), path, self:geometry().width, self:geometry().height, context
@@ -246,16 +249,16 @@ object.properties._legacy_accessors(wibox.object, "buttons", "_buttons", true, f
     ) or false
 end, true)
 
-local function setup_signals(_wibox)
+local function setup_signals(w)
     local obj
     local function clone_signal(name)
         -- When "name" is emitted on wibox.drawin, also emit it on wibox
         obj:connect_signal(name, function(_, ...)
-            _wibox:emit_signal(name, ...)
+            w:emit_signal(name, ...)
         end)
     end
 
-    obj = _wibox.drawin
+    obj = w.drawin
     clone_signal("property::border_color")
     clone_signal("property::border_width")
     clone_signal("property::buttons")
@@ -273,7 +276,7 @@ local function setup_signals(_wibox)
     clone_signal("property::shape_clip")
     clone_signal("property::shape_input")
 
-    obj = _wibox._drawable
+    obj = w._drawable
     clone_signal("button::press")
     clone_signal("button::release")
     clone_signal("mouse::enter")
@@ -402,6 +405,7 @@ end
 -- automatically called when needed.
 -- @param wibox
 -- @method draw
+-- @noreturn
 
 --- Connect a global signal on the wibox class.
 --
@@ -414,6 +418,7 @@ end
 -- @tparam string name The name of the signal
 -- @tparam function func The function to attach
 -- @staticfct wibox.connect_signal
+-- @noreturn
 -- @usage wibox.connect_signal("added", function(notif)
 --    -- do something
 -- end)
@@ -422,6 +427,7 @@ end
 -- @tparam string name The signal name.
 -- @param ... The signal callback arguments
 -- @staticfct wibox.emit_signal
+-- @noreturn
 
 --- Disconnect a signal from a source.
 -- @tparam string name The name of the signal

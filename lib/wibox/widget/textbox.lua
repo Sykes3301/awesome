@@ -21,11 +21,6 @@ local setmetatable = setmetatable
 
 local textbox = { mt = {} }
 
---- The textbox font.
---
--- @beautiful beautiful.font
--- @param string
-
 --- Set the DPI of a Pango layout
 local function setup_dpi(box, dpi)
     assert(dpi, "No DPI provided")
@@ -194,7 +189,7 @@ end
 -- @DOC_wibox_widget_textbox_markup2_EXAMPLE@
 --
 -- @property markup
--- @tparam string markup The text to set. This can contain pango markup (e.g.
+-- @tparam[opt=self.text] string markup The text to set. This can contain pango markup (e.g.
 --   `<b>bold</b>`). You can use `gears.string.escape` to escape
 --   parts of it.
 -- @propemits true false
@@ -222,7 +217,7 @@ end
 -- @DOC_wibox_widget_textbox_text2_EXAMPLE@
 --
 -- @property text
--- @tparam string text The text to display. Pango markup is ignored and shown
+-- @tparam[opt=""] string text The text to display. Pango markup is ignored and shown
 --  as-is.
 -- @propemits true false
 -- @see markup
@@ -245,20 +240,17 @@ end
 
 --- Set the text ellipsize mode.
 --
--- Valid values are:
---
--- * `"start"`
--- * `"middle"`
--- * `"end"`
--- * `"none"`
---
 -- See Pango for additional details:
 -- [Layout.set_ellipsize](https://docs.gtk.org/Pango/method.Layout.set_ellipsize.html)
 --
 --@DOC_wibox_widget_textbox_ellipsize_EXAMPLE@
 --
 -- @property ellipsize
--- @tparam[opt="end"] string mode The ellipsize mode.
+-- @tparam[opt="end"] string ellipsize
+-- @propertyvalue "start"
+-- @propertyvalue "middle"
+-- @propertyvalue "end"
+-- @propertyvalue "none"
 -- @propemits true false
 
 function textbox:set_ellipsize(mode)
@@ -276,16 +268,13 @@ end
 
 --- Set a textbox wrap mode.
 --
--- Valid values are:
---
--- * **word**
--- * **char**
--- * **word_char**
---
 -- @DOC_wibox_widget_textbox_wrap1_EXAMPLE@
 --
 -- @property wrap
--- @tparam[opt="word_char"] string mode Where to wrap? After "word", "char" or "word_char".
+-- @tparam[opt="word_char"] string wrap Where to wrap? After "word", "char" or "word_char".
+-- @propertyvalue "word"
+-- @propertyvalue "char"
+-- @propertyvalue "word_char"
 -- @propemits true false
 
 function textbox:set_wrap(mode)
@@ -306,16 +295,13 @@ end
 -- This aligns the text within the widget's bounds. In some situations this may
 -- differ from aligning the widget with `wibox.container.place`.
 --
--- Valid values are:
---
--- * `"top"`
--- * `"center"`
--- * `"bottom"`
---
 --@DOC_wibox_widget_textbox_valign1_EXAMPLE@
 --
 -- @property valign
--- @tparam[opt="center"] string mode The vertical alignment
+-- @tparam[opt="center"] string valign
+-- @propertyvalue "top"
+-- @propertyvalue "center"
+-- @propertyvalue "bottom"
 -- @propemits true false
 
 function textbox:set_valign(mode)
@@ -336,19 +322,24 @@ end
 -- This aligns the text within the widget's bounds. In some situations this may
 -- differ from aligning the widget with `wibox.container.place`.
 --
--- Valid values are:
---
--- * `"left"`
--- * `"center"`
--- * `"right"`
---
 --@DOC_wibox_widget_textbox_align1_EXAMPLE@
 --
--- @property align
--- @tparam[opt="left"] string mode The horizontal alignment
+-- @property halign
+-- @tparam[opt="left"] string halign
+-- @propertyvalue "left"
+-- @propertyvalue "center"
+-- @propertyvalue "right"
 -- @propemits true false
 
-function textbox:set_align(mode)
+--- The horizontal text alignment.
+--
+-- Renamed to `halign` for consistency with other APIs.
+--
+-- @deprecatedproperty align
+-- @tparam[opt="left"] string align
+-- @propemits true false
+
+function textbox:set_halign(mode)
     local allowed = { left = "LEFT", center = "CENTER", right = "RIGHT" }
     if allowed[mode] then
         if self._private.layout:get_alignment() == allowed[mode] then
@@ -358,7 +349,16 @@ function textbox:set_align(mode)
         self:emit_signal("widget::redraw_needed")
         self:emit_signal("widget::layout_changed")
         self:emit_signal("property::align", mode)
+        self:emit_signal("property::halign", mode)
     end
+end
+
+function textbox:set_align(mode)
+    gdebug.deprecate(
+        "Use `textbox.halign` instead of `textbox.align`",
+        {deprecated_in=5, raw=true}
+    )
+    self:set_halign(mode)
 end
 
 --- Set a textbox font.
@@ -403,7 +403,7 @@ end
 --@DOC_wibox_widget_textbox_font2_EXAMPLE@
 --
 -- @property font
--- @tparam[opt=beautiful.font] string font The font description as string.
+-- @tparam[opt=beautiful.font] font font
 -- @propemits true false
 -- @usebeautiful beautiful.font The default font.
 
@@ -420,6 +420,82 @@ end
 
 function textbox:get_font()
     return self._private.font
+end
+
+--- Set the distance between the lines.
+--
+--@DOC_wibox_widget_textbox_line_spacing_EXAMPLE@
+--
+-- Please note that the Pango version (one of AwesomeWM dependency) must be at
+-- least 1.44 for this to work.
+--
+-- @property line_spacing_factor
+-- @tparam[opt=nil] number|nil line_spacing_factor
+-- @propertyunit Distance between lines as a ratio of the line height. `1.0` means
+--  no spacing. Less than `1.0` will squash the lines and more than `1.0` will move
+--  them further apart.
+-- @propertytype nil Automatic (most probably `1.0`).
+-- @negativeallowed false
+-- @propemits true false
+
+function textbox:set_line_spacing_factor(spacing)
+    if not pcall(function() return self._private.layout.set_line_spacing ~= nil end) then
+        gdebug.print_error(debug.traceback(
+            "Error your version of Pango is too old to support line_spacing"
+        ))
+    end
+
+    spacing = spacing or 0
+    self._private.layout:set_line_spacing(spacing)
+    self:emit_signal("widget::redraw_needed")
+    self:emit_signal("widget::layout_changed")
+    self:emit_signal("property::line_spacing", spacing)
+end
+
+function textbox:get_line_spacing_factor()
+    return self._private.layout:get_line_spacing()
+end
+
+--- Justify the text when there is more space.
+--
+--@DOC_wibox_widget_textbox_justify_EXAMPLE@
+--
+-- @property justify
+-- @tparam[opt=false] boolean justify
+-- @propemits true false
+
+function textbox:set_justify(justify)
+    self._private.layout:set_justify(justify)
+    self:emit_signal("widget::redraw_needed")
+    self:emit_signal("widget::layout_changed")
+    self:emit_signal("property::justify", justify)
+end
+
+function textbox:get_justify()
+    return self._private.layout:get_justify()
+end
+
+--- How to indent text with multiple lines.
+--
+-- Note that this does nothing if `align == "center"`.
+--
+--@DOC_wibox_widget_textbox_indent_EXAMPLE@
+--
+-- @property indent
+-- @tparam[opt=0.0] number indent
+-- @propertyunit points
+-- @negativeallowed true
+-- @propemits true false
+
+function textbox:set_indent(indent)
+    self._private.layout:set_indent(Pango.units_from_double(indent))
+    self:emit_signal("widget::redraw_needed")
+    self:emit_signal("widget::layout_changed")
+    self:emit_signal("property::indent", indent)
+end
+
+function textbox:get_indent()
+    return self._private.layout:get_indent()
 end
 
 --- Create a new textbox.
@@ -441,7 +517,7 @@ local function new(text, ignore_markup)
     ret:set_ellipsize("end")
     ret:set_wrap("word_char")
     ret:set_valign("center")
-    ret:set_align("left")
+    ret:set_halign("left")
 
     if text then
         if ignore_markup then

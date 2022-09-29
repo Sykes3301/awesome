@@ -225,6 +225,7 @@ end
 --  "except" and "except_any" keys. If no rules are provided, all rules
 --  registered with a source will be matched.
 -- @method matching_rules
+-- @treturn table The matching rules.
 function matcher:matching_rules(o, rules)
 
     -- Match all sources.
@@ -290,6 +291,7 @@ end
 -- @tparam string name The property name.
 -- @tparam function f The matching function.
 -- @method add_property_matcher
+-- @noreturn
 -- @usage -- Manually match the screen in various ways.
 -- matcher:add_property_matcher("screen", function(c, value)
 --    return c.screen == value
@@ -313,6 +315,7 @@ end
 -- the context of a rule.
 --
 -- @method add_property_setter
+-- @noreturn
 -- @tparam string name The property name.
 -- @tparam function f The setter function.
 function matcher:add_property_setter(name, f)
@@ -358,8 +361,8 @@ end
 -- @treturn boolean Returns false if a dependency conflict was found.
 -- @method add_matching_rules
 function matcher:add_matching_rules(name, rules, depends_on, precede)
-    local function matching_fct(_self, c, props, callbacks)
-        default_rules_callback(_self, c, props, callbacks, rules)
+    local function matching_fct(_, c, props, callbacks)
+        default_rules_callback(self, c, props, callbacks, rules)
     end
 
     self._matching_rules[name] = rules
@@ -472,6 +475,7 @@ end
 --
 -- @param o The object.
 -- @method apply
+-- @noreturn
 function matcher:apply(o)
     local callbacks, props = {}, {}
     for _, v in ipairs(self._matching_source) do
@@ -514,6 +518,7 @@ end
 -- @tparam string source The source name.
 -- @tparam table rule A valid rule.
 -- @method append_rule
+-- @noreturn
 function matcher:append_rule(source, rule)
     if not self._matching_rules[source] then
         self:add_matching_rules(source, {}, {}, {})
@@ -526,6 +531,7 @@ end
 -- @tparam string source The source name.
 -- @tparam table rules A table with rules.
 -- @method append_rules
+-- @noreturn
 function matcher:append_rules(source, rules)
     for _, rule in ipairs(rules) do
         self:append_rule(source, rule)

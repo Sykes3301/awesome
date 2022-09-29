@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
---- A menu for awful.
+--- Create context menus, optionally with sub-menus.
 --
 -- @author Damien Leone &lt;damien.leone@gmail.com&gt;
 -- @author Julien Danjou &lt;julien@danjou.info&gt;
@@ -93,7 +93,7 @@ end
 -- @param color
 -- @see gears.color
 
---- The default sub-menu indicator if no menu_submenu_icon is provided.
+--- The default sub-menu indicator if no `menu_submenu_icon` is provided.
 -- @beautiful beautiful.menu_submenu
 -- @tparam[opt="▶"] string menu_submenu The sub-menu text.
 -- @see beautiful.menu_submenu_icon
@@ -147,16 +147,16 @@ local function load_theme(a, b)
 end
 
 
-local function item_position(_menu, child)
+local function item_position(self, child)
     local a, b = "height", "width"
-    local dir = _menu.layout.dir or "y"
+    local dir = self.layout.dir or "y"
     if dir == "x" then  a, b = b, a  end
 
-    local in_dir, other = 0, _menu[b]
-    local num = gtable.hasitem(_menu.child, child)
+    local in_dir, other = 0, self[b]
+    local num = gtable.hasitem(self.child, child)
     if num then
         for i = 0, num - 1 do
-            local item = _menu.items[i]
+            local item = self.items[i]
             if item then
                 other = math.max(other, item[b])
                 in_dir = in_dir + item[a]
@@ -169,97 +169,97 @@ local function item_position(_menu, child)
 end
 
 
-local function set_coords(_menu, s, m_coords)
+local function set_coords(self, s, m_coords)
     local s_geometry = s.workarea
     local screen_w = s_geometry.x + s_geometry.width
     local screen_h = s_geometry.y + s_geometry.height
 
-    _menu.width = _menu.wibox.width
-    _menu.height = _menu.wibox.height
+    self.width = self.wibox.width
+    self.height = self.wibox.height
 
-    _menu.x = _menu.wibox.x
-    _menu.y = _menu.wibox.y
+    self.x = self.wibox.x
+    self.y = self.wibox.y
 
-    if _menu.parent then
-        local w, h = item_position(_menu.parent, _menu)
-        w = w + _menu.parent.theme.border_width
+    if self.parent then
+        local w, h = item_position(self.parent, self)
+        w = w + self.parent.theme.border_width
 
-        _menu.y = _menu.parent.y + h + _menu.height > screen_h and
-                 screen_h - _menu.height or _menu.parent.y + h
-        _menu.x = _menu.parent.x + w + _menu.width > screen_w and
-                 _menu.parent.x - _menu.width or _menu.parent.x + w
+        self.y = self.parent.y + h + self.height > screen_h and
+                 screen_h - self.height or self.parent.y + h
+        self.x = self.parent.x + w + self.width > screen_w and
+                 self.parent.x - self.width or self.parent.x + w
     else
         if m_coords == nil then
             m_coords = capi.mouse.coords()
             m_coords.x = m_coords.x + 1
             m_coords.y = m_coords.y + 1
         end
-        _menu.y = m_coords.y < s_geometry.y and s_geometry.y or m_coords.y
-        _menu.x = m_coords.x < s_geometry.x and s_geometry.x or m_coords.x
+        self.y = m_coords.y < s_geometry.y and s_geometry.y or m_coords.y
+        self.x = m_coords.x < s_geometry.x and s_geometry.x or m_coords.x
 
-        _menu.y = _menu.y + _menu.height > screen_h and
-                 screen_h - _menu.height or _menu.y
-        _menu.x = _menu.x + _menu.width  > screen_w and
-                 screen_w - _menu.width  or _menu.x
+        self.y = self.y + self.height > screen_h and
+                 screen_h - self.height or self.y
+        self.x = self.x + self.width  > screen_w and
+                 screen_w - self.width  or self.x
     end
 
-    _menu.wibox.x = _menu.x
-    _menu.wibox.y = _menu.y
+    self.wibox.x = self.x
+    self.wibox.y = self.y
 end
 
 
-local function set_size(_menu)
+local function set_size(self)
     local in_dir, other, a, b = 0, 0, "height", "width"
-    local dir = _menu.layout.dir or "y"
+    local dir = self.layout.dir or "y"
     if dir == "x" then  a, b = b, a  end
-    for _, item in ipairs(_menu.items) do
+    for _, item in ipairs(self.items) do
         other = math.max(other, item[b])
         in_dir = in_dir + item[a]
     end
-    _menu[a], _menu[b] = in_dir, other
+    self[a], self[b] = in_dir, other
     if in_dir > 0 and other > 0 then
-        _menu.wibox[a] = in_dir
-        _menu.wibox[b] = other
+        self.wibox[a] = in_dir
+        self.wibox[b] = other
         return true
     end
     return false
 end
 
 
-local function check_access_key(_menu, key)
-   for i, item in ipairs(_menu.items) do
+local function check_access_key(self, key)
+   for i, item in ipairs(self.items) do
       if item.akey == key then
-            _menu:item_enter(i)
-            _menu:exec(i, { exec = true })
+            self:item_enter(i)
+            self:exec(i, { exec = true })
             return
       end
    end
-   if _menu.parent then
-      check_access_key(_menu.parent, key)
+   if self.parent then
+      check_access_key(self.parent, key)
    end
 end
 
 
-local function grabber(_menu, _, key, event)
+local function grabber(self, _, key, event)
     if event ~= "press" then return end
 
-    local sel = _menu.sel or 0
+    local sel = self.sel or 0
     if gtable.hasitem(menu.menu_keys.up, key) then
-        local sel_new = sel-1 < 1 and #_menu.items or sel-1
-        _menu:item_enter(sel_new)
+        local sel_new = sel-1 < 1 and #self.items or sel-1
+        self:item_enter(sel_new)
     elseif gtable.hasitem(menu.menu_keys.down, key) then
-        local sel_new = sel+1 > #_menu.items and 1 or sel+1
-        _menu:item_enter(sel_new)
+        local sel_new = sel+1 > #self.items and 1 or sel+1
+        self:item_enter(sel_new)
     elseif sel > 0 and gtable.hasitem(menu.menu_keys.enter, key) then
-        _menu:exec(sel)
+        self:exec(sel)
     elseif sel > 0 and gtable.hasitem(menu.menu_keys.exec, key) then
-        _menu:exec(sel, { exec = true })
+        self:exec(sel, { exec = true })
     elseif gtable.hasitem(menu.menu_keys.back, key) then
-        _menu:hide()
+        self:hide()
     elseif gtable.hasitem(menu.menu_keys.close, key) then
-        menu.get_root(_menu):hide()
+        menu.get_root(self):hide()
     else
-        check_access_key(_menu, key)
+        check_access_key(self, key)
     end
 end
 
@@ -357,8 +357,10 @@ end
 
 
 --- Show a menu.
--- @param args The arguments
--- @param args.coords Menu position defaulting to mouse.coords()
+-- @tparam[opt={}] table args The arguments
+-- @tparam[opt=mouse.coords] table args.coords The menu position. A table with
+--  `x` and `y` as keys and position (in pixels) as values.
+-- @noreturn
 -- @method show
 function menu:show(args)
     args = args or {}
@@ -374,6 +376,7 @@ end
 
 --- Hide a menu popup.
 -- @method hide
+-- @noreturn
 function menu:hide()
     -- Remove items from screen
     for i = 1, #self.items do
@@ -390,8 +393,10 @@ function menu:hide()
 end
 
 --- Toggle menu visibility.
--- @param args The arguments
--- @param args.coords Menu position {x,y}
+-- @tparam table args The arguments.
+-- @tparam[opt=mouse.coords] table args.coords The menu position. A table with
+--  `x` and `y` as keys and position (in pixels) as values.
+-- @noreturn
 -- @method toggle
 function menu:toggle(args)
     if self.wibox.visible then
@@ -403,6 +408,7 @@ end
 
 --- Update menu content.
 -- @method update
+-- @noreturn
 function menu:update()
     if self.wibox.visible then
         self:show({ coords = { x = self.x, y = self.y } })
@@ -413,16 +419,18 @@ end
 --- Get the elder parent so for example when you kill
 -- it, it will destroy the whole family.
 -- @method get_root
+-- @treturn awful.menu The root menu.
 function menu:get_root()
     return self.parent and menu.get_root(self.parent) or self
 end
 
 --- Add a new menu entry.
 -- args.* params needed for the menu entry constructor.
--- @param args The item params
--- @param args.new (Default: awful.menu.entry) The menu entry constructor.
--- @param[opt] args.theme The menu entry theme.
--- @param[opt] index The index where the new entry will inserted.
+-- @tparam table args The item params.
+-- @tparam[opt=awful.menu.entry] function args.new The menu entry constructor.
+-- @tparam[opt] table args.theme The menu entry theme.
+-- @tparam[opt] number index The index where the new entry will inserted.
+-- @treturn table|nil The new item.
 -- @method add
 function menu:add(args, index)
     if not args then return end
@@ -479,7 +487,8 @@ function menu:add(args, index)
 end
 
 --- Delete menu entry at given position.
--- @param num The position in the table of the menu entry to be deleted; can be also the menu entry itself.
+-- @tparam table|number num The index in the table of the menu entry to be deleted; can be also the menu entry itself.
+-- @noreturn
 -- @method delete
 function menu:delete(num)
     if type(num) == "table" then
@@ -580,8 +589,8 @@ end
 
 --- Default awful.menu.entry constructor.
 -- @param parent The parent menu (TODO: This is apparently unused)
--- @param args the item params
--- @return table with 'widget', 'cmd', 'akey' and all the properties the user wants to change
+-- @param args The item params
+-- @return table With 'widget', 'cmd', 'akey' and all the properties the user wants to change
 -- @constructorfct awful.menu.entry
 function menu.entry(parent, args) -- luacheck: no unused args
     args = args or {}
@@ -673,14 +682,24 @@ end
 --------------------------------------------------------------------------------
 
 --- Create a menu popup.
--- @param args Table containing the menu information.
 --
--- * Key items: Table containing the displayed items. Each element is a table by default (when element 'new' is
---   awful.menu.entry) containing: item name, triggered action (submenu table or function), item icon (optional).
--- * Keys theme.[fg|bg]_[focus|normal], theme.border_color, theme.border_width, theme.submenu_icon, theme.height
---   and theme.width override the default display for your menu and/or of your menu entry, each of them are optional.
--- * Key auto_expand controls the submenu auto expand behaviour by setting it to true (default) or false.
---
+-- @tparam table args Table containing the menu information.
+-- @tparam[opt=true] boolean args.auto_expand Controls the submenu auto expand behaviour.
+-- @tparam table args.items Table containing the displayed items. Each element is a
+--   table by default (when element 'new' is awful.menu.entry) containing: item
+--   name, triggered action (submenu table or function), item icon (optional).
+-- @tparam table args.theme
+-- @tparam[opt=beautiful.menu_fg_normal] color args.theme.fg_normal
+-- @tparam[opt=beautiful.menu_bg_normal] color args.theme.bg_normal
+-- @tparam[opt=beautiful.menu_fg_focus] color args.theme.fg_focus
+-- @tparam[opt=beautiful.menu_bg_focus] color args.theme.bg_focus
+-- @tparam[opt=beautiful.menu_border_color] color args.theme.border
+-- @tparam[opt=beautiful.menu_border_width] integer args.theme.border_width
+-- @tparam[opt=beautiful.menu_height] integer args.theme.height
+-- @tparam[opt=beautiful.menu_width] integer args.theme.width
+-- @tparam[opt=beautiful.menu_font] string args.theme.font
+-- @tparam[opt=beautiful.menu_submenu_icon] gears.surface|string args.theme.submenu_icon
+-- @tparam[opt=beautiful.menu_submenu] string args.theme.submenu
 -- @param parent Specify the parent menu if we want to open a submenu, this value should never be set by the user.
 -- @constructorfct awful.menu
 -- @usage -- The following function builds and shows a menu of clients that match
