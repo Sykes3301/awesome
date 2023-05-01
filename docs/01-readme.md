@@ -1,6 +1,7 @@
 # Readme
 
-## About Awesome
+## About Awesome & My Fork
+This Fork contains the modified code to allow vmware to have multimonitor support.
 
 Awesome is a highly configurable, next generation framework window manager for X.
 
